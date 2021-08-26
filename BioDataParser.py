@@ -22,11 +22,13 @@ class Metabolite:
 
 
 class Reaction:
-    def __init__(self, rec_id, name, metabolites, notes, local_index):
+    def __init__(self, rec_id, name, metabolites, notes, lower_bound, upper_bound, local_index):
         self._id = rec_id
         self._name = name
         self._metabolites = metabolites
         self._notes = notes
+        self._lower_bound = lower_bound
+        self._upper_bound = upper_bound
         self._local_index = local_index
 
     def get_id(self):
@@ -40,6 +42,12 @@ class Reaction:
 
     def get_notes(self):
         return self._notes
+
+    def get_lower_bound(self):
+        return self._lower_bound
+
+    def get_upper_bound(self):
+        return self._upper_bound
 
     def get_local_index(self):
         return self._local_index
@@ -76,6 +84,8 @@ def make_reactions_dict(reactions_dicts_list):
                                 name=a_reaction_dict['name'],
                                 metabolites=a_reaction_dict['metabolites'],
                                 notes=a_reaction_dict['notes'],
+                                lower_bound=a_reaction_dict['lower_bound'],
+                                upper_bound=a_reaction_dict['upper_bound'],
                                 local_index=index)
         reactions_dict[the_reaction_id] = the_reaction
     return reactions_dict
@@ -99,7 +109,20 @@ def save_sparse_stoichiometry_matrix(all_metabolites, all_reactions, save_path):
             met_index = all_metabolites[met_id].get_local_index()
             line_str = str(met_index) + ' ' + str(rec_index) + ' ' + str(the_coeff)
             lines.append(line_str)
-    save_lines(lines, save_path)
+    save_lines(lines, save_path + "/S.txt")
+
+
+def save_lower_and_upper_bounds(all_reactions, bounds_path):
+    num_reactions = len(all_reactions.keys())
+    lbs = [str(num_reactions)]
+    ubs = [str(num_reactions)]
+    for rec_id, the_reaction in all_reactions.items():
+        rec_lb = the_reaction.get_lower_bound()
+        rec_ub = the_reaction.get_upper_bound()
+        lbs.append(str(rec_lb))
+        ubs.append(str(rec_ub))
+    save_lines(lbs, bounds_path + "/L.txt")
+    save_lines(ubs, bounds_path + "/U.txt")
 
 
 def save_bigg_model(model_filename, save_path):
@@ -119,7 +142,7 @@ def save_bigg_model(model_filename, save_path):
             ['id', 'name', 'compartment', 'notes', 'annotation']
         model_data['reactions'] = a list consists of 28301 dicts, each reaction dict has keys:
             ['id', 'name', 'metabolites', 'lower_bound', 'upper_bound', 'gene_reaction_rule', 'notes', 'annotation']
-            Note: all lower_bounds are 0.0 and all upper_bounds are 1000.0
+            Note: It seems that all lower_bounds are 0.0 and all upper_bounds are 1000.0
         model_data['genes'] =  []  (Blank!)
         model_data['id'] = bigg_universal
         model_data['compartments'] = {}  (Blank!)
@@ -128,13 +151,14 @@ def save_bigg_model(model_filename, save_path):
         all_metabolites = make_metabolites_dict(model_data['metabolites'])
         all_reactions = make_reactions_dict(model_data['reactions'])
         save_sparse_stoichiometry_matrix(all_metabolites, all_reactions, save_path)
+        save_lower_and_upper_bounds(all_reactions, save_path)
 
 
 def main():
     # metabolites_filename = "../Data/BiGG Universal Model/bigg_models_metabolites.txt"
     # reactions_filename = "../Data/BiGG Universal Model/bigg_models_reactions.txt"
     model_filename = "../Data/BiGG Universal Model/universal_model.json"
-    save_path = "../Data/BiGG Universal Model/S.txt"
+    save_path = "../Data/BiGG Universal Model"
     save_bigg_model(model_filename, save_path)
 
     # file_path = "../Data/Knock-Out Experiments - EcoCyc/LB enriched/LB_enriched_-_NG.txt"
