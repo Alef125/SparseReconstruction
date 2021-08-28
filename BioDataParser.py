@@ -169,8 +169,8 @@ def main():
     # metabolites_filename = "../Data/BiGG Universal Model/bigg_models_metabolites.txt"
     # reactions_filename = "../Data/BiGG Universal Model/bigg_models_reactions.txt"
     model_filename = "../Data/BiGG Universal Model/universal_model.json"
-    save_path = "../Data/BiGG Universal Model"
-    all_reactions_bigg_ids = save_bigg_model(model_filename, save_path, do_save=False)
+    universal_model_path = "../Data/BiGG Universal Model"
+    all_reactions_bigg_ids = save_bigg_model(model_filename, universal_model_path, do_save=False)
     print(all_reactions_bigg_ids)
 
     # ecoli_model_path = "../Data/Escherichia coli str. K-12 substr. MG1655/iAF1260b.json"
@@ -182,7 +182,7 @@ def main():
     GeneKnockOutParser.save_knock_out_bounds(all_reactions_ids_list=all_reactions_bigg_ids,
                                              gene_associations_path=associations_path,
                                              knock_outs_path=knock_outs_path,
-                                             l_u_save_path=save_path,
+                                             universal_model_path=universal_model_path,
                                              save_path=bounds_save_path)
 
 

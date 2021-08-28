@@ -138,25 +138,28 @@ def make_knock_out_masks(all_reactions_ids_list, knock_outs_info, associations):
 def read_bound(bound_path):
     with open(bound_path, 'r') as f:
         lines = f.readlines()
-    return lines[1:]  # first line is num_lines
+    vec = []
+    for line in lines[1:]:  # first line is num_lines
+        vec.append(float(line[:-1]))  # "\n" excluded
+    return vec
 
 
 def make_bound_by_masks(l, u, mask_matrix):
     mask_shape = mask_matrix.shape
     num_columns = mask_shape[1]
-    l_matrix = np.reshape(np.transpose(np.array([l] * num_columns)), (28301, 598))
-    u_matrix = np.reshape(np.transpose(np.array([u] * num_columns)), (28301, 598))
+    l_matrix = np.reshape(np.transpose(np.array([l] * num_columns)), mask_shape)
+    u_matrix = np.reshape(np.transpose(np.array([u] * num_columns)), mask_shape)
     l_matrix = np.multiply(l_matrix, mask_matrix)
     u_matrix = np.multiply(u_matrix, mask_matrix)
     return l_matrix, u_matrix
 
 
 def save_bound_matrix(matrix, save_path):
-    with open(save_path, 'w') as f:
-        f.write(matrix)
+    np.savetxt(save_path, matrix, fmt='%.2f')
 
 
-def save_knock_out_bounds(all_reactions_ids_list, gene_associations_path, knock_outs_path, l_u_save_path, save_path):
+def save_knock_out_bounds(all_reactions_ids_list, gene_associations_path, knock_outs_path,
+                          universal_model_path, save_path):
     with open(gene_associations_path, 'r') as f:
         associations = json.load(f)
     with open(knock_outs_path, 'r') as f:
@@ -165,8 +168,8 @@ def save_knock_out_bounds(all_reactions_ids_list, gene_associations_path, knock_
 
     mask_matrix = make_knock_out_masks(all_reactions_ids_list, knock_outs_info, associations)
 
-    lb = np.zeros((28301, 1))  # read_bound(l_u_save_path + '/l.txt')
-    ub = np.ones((28301, 1)) * 1000  # read_bound(l_u_save_path + '/u.txt')
-    l_matrix, u_matrix = make_bound_by_masks(lb, ub, mask_matrix)
+    l_universal = read_bound(universal_model_path + '/l.txt')
+    u_universal = read_bound(universal_model_path + '/u.txt')
+    l_matrix, u_matrix = make_bound_by_masks(l_universal, u_universal, mask_matrix)
     save_bound_matrix(l_matrix, save_path + '/L.txt')
     save_bound_matrix(u_matrix, save_path + '/U.txt')
