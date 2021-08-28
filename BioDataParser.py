@@ -1,4 +1,5 @@
 import json
+import GeneKnockOutParser
 
 
 class Metabolite:
@@ -51,13 +52,6 @@ class Reaction:
 
     def get_local_index(self):
         return self._local_index
-
-
-def get_fields(fields_str):
-    repaired_str = repr(fields_str)[1:-1]
-    print(repaired_str)
-    fields = repaired_str.split("\\t")
-    return fields
 
 
 def make_metabolites_dict(metabolites_dicts_list):
@@ -125,7 +119,7 @@ def save_lower_and_upper_bounds(all_reactions, bounds_path):
     save_lines(ubs, bounds_path + "/U.txt")
 
 
-def save_bigg_model(model_filename, save_path):
+def save_bigg_model(model_filename, save_path, do_save):
     # with open(metabolites_filename, 'r') as f:
     #     lines = f.readlines()
     #     headers = lines[0]
@@ -150,24 +144,28 @@ def save_bigg_model(model_filename, save_path):
         """
         all_metabolites = make_metabolites_dict(model_data['metabolites'])
         all_reactions = make_reactions_dict(model_data['reactions'])
-        save_sparse_stoichiometry_matrix(all_metabolites, all_reactions, save_path)
-        save_lower_and_upper_bounds(all_reactions, save_path)
+        if do_save:
+            save_sparse_stoichiometry_matrix(all_metabolites, all_reactions, save_path)
+            save_lower_and_upper_bounds(all_reactions, save_path)
+        return list(all_reactions.keys())
 
 
 def main():
     # metabolites_filename = "../Data/BiGG Universal Model/bigg_models_metabolites.txt"
     # reactions_filename = "../Data/BiGG Universal Model/bigg_models_reactions.txt"
+
     model_filename = "../Data/BiGG Universal Model/universal_model.json"
     save_path = "../Data/BiGG Universal Model"
-    save_bigg_model(model_filename, save_path)
+    all_reactions_ids = save_bigg_model(model_filename, save_path, do_save=False)
 
-    # file_path = "../Data/Knock-Out Experiments - EcoCyc/LB enriched/LB_enriched_-_NG.txt"
-    # with open(file_path) as f:
-    #     lines = f.readlines()
-    #     print(lines[0])
-    #     data_fields = get_fields(lines[0][:-1])
-    #
-    # print(data_fields)
+    # xml_f = "../Data/Escherichia coli str. K-12 substr. MG1655/iAF1260b.xml"
+    associations_path = "../Data/Escherichia coli str. K-12 substr. MG1655/ecoli_genes_associations.json"
+    knock_outs_path = "../Data/Knock-Out Experiments - EcoCyc/LB enriched/LB_enriched_-_G.txt"
+    bounds_save_path = "../Data/Knock-Out Experiments - EcoCyc/LB enriched"
+    GeneKnockOutParser.save_knock_out_bounds(all_reactions_ids_list=all_reactions_ids,
+                                             gene_associations_path=associations_path,
+                                             knock_outs_path=knock_outs_path,
+                                             save_path=bounds_save_path)
 
 
 if __name__ == '__main__':
