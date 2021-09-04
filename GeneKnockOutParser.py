@@ -155,7 +155,11 @@ def make_bound_by_masks(l, u, mask_matrix):
 
 
 def save_bound_matrix(matrix, save_path):
-    np.savetxt(save_path, matrix, fmt='%.2f')
+    matrix_shape = matrix.shape
+    shape_str = str(matrix_shape[0]) + " " + str(matrix_shape[1]) + "\n"
+    with open(save_path, "a") as f:
+        f.write(shape_str)
+        np.savetxt(f, matrix, fmt='%.2f')
 
 
 def save_knock_out_bounds(all_reactions_ids_list, gene_associations_path, knock_outs_path,

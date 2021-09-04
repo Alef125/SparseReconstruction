@@ -115,7 +115,7 @@ def save_sparse_stoichiometry_matrix(all_metabolites, all_reactions, save_path):
         the_rec_metabolites = the_reaction.get_metabolites()
         for met_id, the_coeff in the_rec_metabolites.items():
             met_index = all_metabolites[met_id].get_local_index()
-            line_str = str(met_index) + ' ' + str(rec_index) + ' ' + str(the_coeff)
+            line_str = str(met_index+1) + ' ' + str(rec_index+1) + ' ' + str(the_coeff)  # +1 for python indexing from 0
             lines.append(line_str)
     save_lines(lines, save_path + "/S.txt")
 
