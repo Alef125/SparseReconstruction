@@ -13,6 +13,7 @@ For more information, see the document.
 """
 
 import json
+import warnings
 import pandas as pd
 
 
@@ -93,6 +94,9 @@ class SourceUtilBoundsMaker:
         counter = 0
         for source_data in self.sources_util:
             if source_data['growth']:  # == True
+                if source_data['medium'] not in self.media_dict.keys():
+                    warnings.warn("medium " + source_data['medium'] + " not specified")
+                    continue
                 medium_bounds = self.media_dict[source_data['medium']].copy()
                 if counter == 0:
                     self.initiate_growth_bounds(exchanges_ids_list=medium_bounds['ID'].tolist())
@@ -118,6 +122,9 @@ class SourceUtilBoundsMaker:
         counter = 0
         for source_data in self.sources_util:
             if not source_data['growth']:  # == False
+                if source_data['medium'] not in self.media_dict.keys():
+                    warnings.warn("medium " + source_data['medium'] + " not specified")
+                    continue
                 medium_bounds = self.media_dict[source_data['medium']].copy()
                 if counter == 0:
                     self.initiate_non_growth_bounds(exchanges_ids_list=medium_bounds['ID'].tolist())
