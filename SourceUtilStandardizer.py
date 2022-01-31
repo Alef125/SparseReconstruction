@@ -7,6 +7,10 @@ import pandas as pd
 import json
 
 
+def get_list_from_comma_separate(comma_separate_str):
+    return comma_separate_str.split(", ")
+
+
 class SourceUtilGrowthData:
     def __init__(self, csv_filepath, medium_name):
         self.csv_filepath = csv_filepath
@@ -17,7 +21,7 @@ class SourceUtilGrowthData:
         util_dicts = []
         for index, row in csv_file.iterrows():
             util_dicts.append(
-                {'source_id': row['ID'],
+                {'sources_id': get_list_from_comma_separate(row['IDs']),
                  'medium': self.medium,
                  'growth': row['Growth'],
                  'confidence_sc': row['Confidence Score']}
