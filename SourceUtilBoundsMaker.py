@@ -44,7 +44,7 @@ def modify_uptakes(medium_bounds, sources_ids, exchanges_ids_list):
 
 
 class SourceUtilBoundsMaker:
-    def __init__(self, sources_util_filepath, media_filepath_dict: dict):
+    def __init__(self, sources_util_filepath: str, media_filepath_dict: dict, internal_rxns_filepath: str):
         """
         :param sources_util_filepath: A string denoting the filepath for sources_util.json file.
                                       e.g. list items: {'sources_id': ['leu-L', 'nh4', 'pi', 'so4'],
@@ -54,11 +54,19 @@ class SourceUtilBoundsMaker:
         :param media_filepath_dict: A dictionary in the format of  {'media_name': "medium_bounds.csv"},
                                     denoting the filepath for each medium_bounds.csv
                                     Note: the first column (ID) for all media bounds file *should be identical*.
+        :param internal_rxns_filepath: A string denoting the filepath for internal_rxns_bounds.csv file.
         """
         self.sources_util_filepath = sources_util_filepath
         self.sources_util = None
+        self.load_sources_util()
+        # ############################################
         self.media_filepath_dict = media_filepath_dict
         self.media_dict = {}
+        # ##################################################
+        self.internal_rxns_filepath = internal_rxns_filepath
+        self.internal_rxns_df = None
+        self.load_internal_rxns_bounds()
+        # ##############################
         self.exchanges_ids_list = None
         self.growth_lower_bounds = None
         self.growth_upper_bounds = None
@@ -66,30 +74,61 @@ class SourceUtilBoundsMaker:
         self.non_growth_upper_bounds = None
 
     def load_sources_util(self):
+        """
+        This method, loads the sources_util.json from self.sources_util_filepath
+        :return: -
+        """
         if self.sources_util is None:
             with open(self.sources_util_filepath, 'r') as json_file:
                 self.sources_util = json.load(json_file)
 
     def add_medium(self, medium_name, medium_filepath):
+        """
+        :param medium_name: The name of the medium to be added
+        :param medium_filepath: The path to the medium bounds .csv file
+        :return: -. Adds this new medium to the self.media_filepath_dict
+        """
         self.media_filepath_dict[medium_name] = medium_filepath
 
     def load_media_bounds(self):
+        """
+        This method, loads the media_bounds .json files based on the paths in self.media_filepath_dict
+        :return:
+        """
         # if not self.media_dict:
         for medium_name, medium_filepath in self.media_filepath_dict.items():
             self.media_dict[medium_name] = pd.read_csv(medium_filepath)
 
-    def initiate_growth_bounds(self, exchanges_ids_list):
-        self.exchanges_ids_list = exchanges_ids_list
-        self.growth_lower_bounds = pd.DataFrame(self.exchanges_ids_list, columns=['ID'])
-        self.growth_upper_bounds = pd.DataFrame(self.exchanges_ids_list, columns=['ID'])
+    def load_internal_rxns_bounds(self):
+        """
+        This method, loads the internal reactions bounds .csv file from self.internal_rxns_filepath
+        :return: -
+        """
+        self.internal_rxns_df = pd.read_csv(self.internal_rxns_filepath)
 
-    def initiate_non_growth_bounds(self, exchanges_ids_list):
+    def initiate_growth_bounds(self, internal_ids_list: list, exchanges_ids_list: list):
+        """
+        :param internal_ids_list: The list of all internal reactions ids
+        :param exchanges_ids_list: The list of all exchange reactions ids (same in all the media)
+        :return: -. Initializes the growth bounds as a DataFrame
+        """
         self.exchanges_ids_list = exchanges_ids_list
-        self.non_growth_lower_bounds = pd.DataFrame(self.exchanges_ids_list, columns=['ID'])
-        self.non_growth_upper_bounds = pd.DataFrame(self.exchanges_ids_list, columns=['ID'])
+        all_reactions_ids = internal_ids_list + exchanges_ids_list
+        self.growth_lower_bounds = pd.DataFrame(all_reactions_ids, columns=['ID'])
+        self.growth_upper_bounds = pd.DataFrame(all_reactions_ids, columns=['ID'])
+
+    def initiate_non_growth_bounds(self, internal_ids_list: list, exchanges_ids_list: list):
+        """
+        :param internal_ids_list: The list of all internal reactions ids
+        :param exchanges_ids_list: The list of all exchange reactions ids (same in all the media)
+        :return: -. Initializes the non-growth bounds as a DataFrame
+        """
+        self.exchanges_ids_list = exchanges_ids_list
+        all_reactions_ids = internal_ids_list + exchanges_ids_list
+        self.non_growth_lower_bounds = pd.DataFrame(all_reactions_ids, columns=['ID'])
+        self.non_growth_upper_bounds = pd.DataFrame(all_reactions_ids, columns=['ID'])
 
     def make_growth_bounds(self):
-        self.load_sources_util()
         self.load_media_bounds()
         counter = 0
         for source_data in self.sources_util:
@@ -99,7 +138,8 @@ class SourceUtilBoundsMaker:
                     continue
                 medium_bounds = self.media_dict[source_data['medium']].copy()
                 if counter == 0:
-                    self.initiate_growth_bounds(exchanges_ids_list=medium_bounds['ID'].tolist())
+                    self.initiate_growth_bounds(internal_ids_list=self.internal_rxns_df['ID'].tolist(),
+                                                exchanges_ids_list=medium_bounds['ID'].tolist())
                 else:
                     if medium_bounds['ID'].tolist() != self.exchanges_ids_list:
                         print("Exchange reactions of media are not Identical")
@@ -108,16 +148,17 @@ class SourceUtilBoundsMaker:
                 medium_bounds = modify_uptakes(medium_bounds=medium_bounds,
                                                sources_ids=source_data['sources_id'],
                                                exchanges_ids_list=self.exchanges_ids_list)
+                total_bounds_df = pd.concat([self.internal_rxns_df, medium_bounds],
+                                            ignore_index=True)
                 confidence_str = '1'
                 if 'confidence_sc' in source_data.keys():
                     confidence_str = str(source_data['confidence_sc'])
                 new_column_name = str(counter + 1) + ', confidence: ' + confidence_str
-                self.growth_lower_bounds['l' + new_column_name] = medium_bounds['Lower Bound'].tolist()
-                self.growth_upper_bounds['u' + new_column_name] = medium_bounds['Upper Bound'].tolist()
+                self.growth_lower_bounds['l' + new_column_name] = total_bounds_df['Lower Bound'].tolist()
+                self.growth_upper_bounds['u' + new_column_name] = total_bounds_df['Upper Bound'].tolist()
                 counter += 1
 
     def make_non_growth_bounds(self):
-        self.load_sources_util()
         self.load_media_bounds()
         counter = 0
         for source_data in self.sources_util:
@@ -127,7 +168,8 @@ class SourceUtilBoundsMaker:
                     continue
                 medium_bounds = self.media_dict[source_data['medium']].copy()
                 if counter == 0:
-                    self.initiate_non_growth_bounds(exchanges_ids_list=medium_bounds['ID'].tolist())
+                    self.initiate_non_growth_bounds(internal_ids_list=self.internal_rxns_df['ID'].tolist(),
+                                                    exchanges_ids_list=medium_bounds['ID'].tolist())
                 else:
                     if medium_bounds['ID'].tolist() != self.exchanges_ids_list:
                         print("Exchange reactions of media are not Identical")
@@ -136,12 +178,14 @@ class SourceUtilBoundsMaker:
                 medium_bounds = modify_uptakes(medium_bounds=medium_bounds,
                                                sources_ids=source_data['sources_id'],
                                                exchanges_ids_list=self.exchanges_ids_list)
+                total_bounds_df = pd.concat([self.internal_rxns_df, medium_bounds],
+                                            ignore_index=True)
                 confidence_str = '1'
                 if 'confidence_sc' in source_data.keys():
                     confidence_str = str(source_data['confidence_sc'])
                 new_column_name = str(counter + 1) + ', confidence: ' + confidence_str
-                self.non_growth_lower_bounds['l' + new_column_name] = medium_bounds['Lower Bound'].tolist()
-                self.non_growth_upper_bounds['u' + new_column_name] = medium_bounds['Upper Bound'].tolist()
+                self.non_growth_lower_bounds['l' + new_column_name] = total_bounds_df['Lower Bound'].tolist()
+                self.non_growth_upper_bounds['u' + new_column_name] = total_bounds_df['Upper Bound'].tolist()
                 counter += 1
 
     def save_all_bounds(self, folder_to_save):
@@ -153,7 +197,8 @@ class SourceUtilBoundsMaker:
 
 media_filepath_dict1 = {'minimal_media': "../Data/Palsson B.Subtilis Reconstruction/Biolog_Medium_Bounds.csv"}
 obj = SourceUtilBoundsMaker(sources_util_filepath="../Data/Palsson B.Subtilis Reconstruction/Growth_Biolog.json",
-                            media_filepath_dict=media_filepath_dict1)
+                            media_filepath_dict=media_filepath_dict1,
+                            internal_rxns_filepath="../Data/Palsson B.Subtilis Reconstruction/Internal_Rxns_Bounds.csv")
 obj.make_growth_bounds()
 obj.make_non_growth_bounds()
 obj.save_all_bounds(folder_to_save="../Data/Palsson B.Subtilis Reconstruction/Util Bounds/")
