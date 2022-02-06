@@ -21,7 +21,7 @@ import json
 import warnings
 
 
-def modify_uptakes(total_bounds, ko_rxns_ids):
+def modify_ko_bounds(total_bounds, ko_rxns_ids):
     """
     :param total_bounds: A DataFrame denoting the base bounds for all the reactions in the medium
     :param ko_rxns_ids: List of reactions which are knocked-out in this specific experiment
@@ -143,12 +143,12 @@ class KnockOutBoundsMaker:
                 # Setting the bounds for the knocked-out reaction in this dict to 0:
                 total_bounds_df = pd.concat([self.internal_rxns_df, medium_bounds],
                                             ignore_index=True)
-                is_valid, medium_bounds = modify_uptakes(total_bounds=total_bounds_df,
-                                                         ko_rxns_ids=ko_data['ko_rxns_ids'])
+                is_valid, modified_bounds = modify_ko_bounds(total_bounds=total_bounds_df,
+                                                             ko_rxns_ids=ko_data['ko_rxns_ids'])
                 if is_valid:
                     new_column_name = str(counter + 1)
-                    self.growth_lower_bounds['l' + new_column_name] = medium_bounds['Lower Bound'].tolist()
-                    self.growth_upper_bounds['u' + new_column_name] = medium_bounds['Upper Bound'].tolist()
+                    self.growth_lower_bounds['l' + new_column_name] = modified_bounds['Lower Bound'].tolist()
+                    self.growth_upper_bounds['u' + new_column_name] = modified_bounds['Upper Bound'].tolist()
                     counter += 1
 
     def make_non_growth_bounds(self):
@@ -170,12 +170,12 @@ class KnockOutBoundsMaker:
                 # Setting the bounds for the knocked-out reaction in this dict to 0:
                 total_bounds_df = pd.concat([self.internal_rxns_df, medium_bounds],
                                             ignore_index=True)
-                is_valid, medium_bounds = modify_uptakes(total_bounds=total_bounds_df,
-                                                         ko_rxns_ids=ko_data['ko_rxns_ids'])
+                is_valid, modified_bounds = modify_ko_bounds(total_bounds=total_bounds_df,
+                                                             ko_rxns_ids=ko_data['ko_rxns_ids'])
                 if is_valid:
                     new_column_name = str(counter + 1)
-                    self.non_growth_lower_bounds['l' + new_column_name] = medium_bounds['Lower Bound'].tolist()
-                    self.non_growth_upper_bounds['u' + new_column_name] = medium_bounds['Upper Bound'].tolist()
+                    self.non_growth_lower_bounds['l' + new_column_name] = modified_bounds['Lower Bound'].tolist()
+                    self.non_growth_upper_bounds['u' + new_column_name] = modified_bounds['Upper Bound'].tolist()
                     counter += 1
 
     def save_all_bounds(self, folder_to_save):
