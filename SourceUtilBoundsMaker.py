@@ -15,6 +15,7 @@ For more information, see the document.
 import json
 import warnings
 import pandas as pd
+import os
 
 
 def find_exchange_by_name(metabolite_name, all_exchange_names):
@@ -189,6 +190,8 @@ class SourceUtilBoundsMaker:
                 counter += 1
 
     def save_all_bounds(self, folder_to_save):
+        if not os.path.exists(folder_to_save):
+            os.makedirs(folder_to_save)
         self.growth_lower_bounds.to_csv(folder_to_save + 'g_lower_bounds.csv', index=False)
         self.growth_upper_bounds.to_csv(folder_to_save + 'g_upper_bounds.csv', index=False)
         self.non_growth_lower_bounds.to_csv(folder_to_save + 'ng_lower_bounds.csv', index=False)
