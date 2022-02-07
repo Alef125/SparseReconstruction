@@ -16,9 +16,10 @@ Note: If not "all" the reactions from an KO experiment are found in the reaction
 For more information, see the document.
 """
 
-import pandas as pd
 import json
 import warnings
+import pandas as pd
+import os
 
 
 def modify_ko_bounds(total_bounds, ko_rxns_ids):
@@ -179,6 +180,8 @@ class KnockOutBoundsMaker:
                     counter += 1
 
     def save_all_bounds(self, folder_to_save):
+        if not os.path.exists(folder_to_save):
+            os.makedirs(folder_to_save)
         self.growth_lower_bounds.to_csv(folder_to_save + 'g_lower_bounds.csv', index=False)
         self.growth_upper_bounds.to_csv(folder_to_save + 'g_upper_bounds.csv', index=False)
         self.non_growth_lower_bounds.to_csv(folder_to_save + 'ng_lower_bounds.csv', index=False)
