@@ -26,8 +26,8 @@ def modify_ko_bounds(total_bounds, ko_rxns_ids):
     """
     :param total_bounds: A DataFrame denoting the base bounds for all the reactions in the medium
     :param ko_rxns_ids: List of reactions which are knocked-out in this specific experiment
-    :return: all_reactions_found_flag: True if all knocked-out reactions were completely shut down
-             medium_bounds: modified medium bounds as a DataFrame
+    :return: all_reactions_found_flag: True if all knocked-out reactions were completely shut down,
+             to prevent misleading KO data generation
     """
     all_reactions_found_flag = True
     all_reactions_ids = total_bounds['ID'].tolist()
@@ -79,7 +79,7 @@ class KnockOutBoundsMaker:
         with open(self.reactions_ko_filepath, 'r') as json_file:
             self.reactions_ko_list = json.load(json_file)
 
-    def add_medium(self, medium_name, medium_filepath):
+    def add_medium(self, medium_name: str, medium_filepath: str):
         """
         :param medium_name: The name of the medium to be added
         :param medium_filepath: The path to the medium bounds .csv file
@@ -126,6 +126,11 @@ class KnockOutBoundsMaker:
         self.non_growth_upper_bounds = pd.DataFrame(all_reactions_ids, columns=['ID'])
 
     def make_growth_bounds(self):
+        """
+        This method, fills self.growth_lower_bounds and self.growth_upper_bounds based on
+        self.reactions_ko_list
+        :return: -
+        """
         self.load_media_bounds()
         counter = 0
         for ko_data in self.reactions_ko_list:
@@ -153,6 +158,11 @@ class KnockOutBoundsMaker:
                     counter += 1
 
     def make_non_growth_bounds(self):
+        """
+        This method, fills self.non_growth_lower_bounds and self.non_growth_upper_bounds based on
+        self.reactions_ko_list
+        :return: -
+        """
         self.load_media_bounds()
         counter = 0
         for ko_data in self.reactions_ko_list:
@@ -179,7 +189,11 @@ class KnockOutBoundsMaker:
                     self.non_growth_upper_bounds['u' + new_column_name] = modified_bounds['Upper Bound'].tolist()
                     counter += 1
 
-    def save_all_bounds(self, folder_to_save):
+    def save_all_bounds(self, folder_to_save: str):
+        """
+        :param folder_to_save: Folder path to save all four growth and non-growth bound
+        :return: -
+        """
         if not os.path.exists(folder_to_save):
             os.makedirs(folder_to_save)
         self.growth_lower_bounds.to_csv(folder_to_save + 'g_lower_bounds.csv', index=False)
