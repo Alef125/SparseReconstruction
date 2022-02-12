@@ -22,7 +22,10 @@ class GenesKOStandardizer:
         :param input_genes_nomenclature: The column name in the translation_file
                                          corresponding to the genes names in the genes_ko_growth_filepath.csv
         :param output_genes_nomenclature: The column name in the translation_file
-                                          corresponding to the desired genes names
+                                          corresponding to the desired genes names.
+
+                              ** Note **: This argument *should* be the nomenclature used in you GPR rules.
+
         :param translation_filepath: The file path for translation_file, which contains all different names for genes
         """
         self.genes_ko_growth_filepath = genes_ko_growth_filepath
