@@ -139,6 +139,10 @@ class GPRMapConverter:
                                              corresponding to the reaction names in the gene_assoc_data.json
         :param output_reactions_nomenclature: The column name in the translation_file
                                               corresponding to the desired reaction names
+
+                                  ** Note **: This argument *should* be the nomenclature used in your
+                                              Internal_Rxns_Bounds.csv and EX_Rxns_Bounds.csv files.
+
         :param translation_filepath: The file path for translation_file, which contains all different names
                                      for reactions
         """
