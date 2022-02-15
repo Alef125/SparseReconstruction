@@ -84,15 +84,17 @@ class BiomassFinalizer:
         in our growth data of self.template_placed_lower_bounds and self.template_placed_upper_bounds.
         :return: -
         """
-        all_data_columns = list(self.template_placed_upper_bounds.columns)
-        all_data_columns.remove('ID')
+        lb_columns = list(self.template_placed_lower_bounds.columns)
+        ub_columns = list(self.template_placed_upper_bounds.columns)
+        lb_columns.remove('ID')
+        ub_columns.remove('ID')
         self.template_placed_lower_bounds.loc[
             self.template_placed_lower_bounds['ID'] == self.biomass_template_id,
-            all_data_columns
+            lb_columns
         ] = self.biomass_growth_threshold
         self.template_placed_upper_bounds.loc[
             self.template_placed_upper_bounds['ID'] == self.biomass_template_id,
-            all_data_columns
+            ub_columns
         ] = 1e6
 
     def make_sparse_stoichiometry_matix(self, reactions_index_map: dict, metabolites_index_map: dict):
