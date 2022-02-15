@@ -164,7 +164,7 @@ class BiomassFinalizer:
 
 obj = BiomassFinalizer(
     template_lower_bounds_filepath="../Data/Palsson B.Subtilis Reconstruction/Template Placed Bounds/lower_bounds.csv",
-    template_upper_bounds_filepath="../Data/Palsson B.Subtilis Reconstruction/Template Placed Bounds/lower_bounds.csv",
+    template_upper_bounds_filepath="../Data/Palsson B.Subtilis Reconstruction/Template Placed Bounds/upper_bounds.csv",
     stoichiometric_data_filepath="../Data/Palsson B.Subtilis Reconstruction/Stoichiometric Data.json",
     template_metabolites_filepath="../Data/Palsson B.Subtilis Reconstruction/Template Metabolites.json",
     biomass_template_id="BIOMASS_Ec_iAF1260_core_59p81M",
