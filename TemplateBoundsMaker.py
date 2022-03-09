@@ -163,15 +163,22 @@ class TemplateBoundsMaker:
         """
         for rxn_base_id in self.internal_rxns_ids:
             if rxn_base_id in self.translation_dict.keys():
-                rxn_temp_ids = self.translation_dict[rxn_base_id]
-                if not rxn_temp_ids:
-                    warn_text = "Bad translation for " + rxn_base_id  # 161
+                rxn_translated_ids = self.translation_dict[rxn_base_id]
+                if not rxn_translated_ids:
+                    warn_text = "Empty translation for " + rxn_base_id  # 161
                     warnings.warn(warn_text)
                 else:
-                    if rxn_base_id in rxn_temp_ids:  # 745
-                        self.internal_rxns_temp.append(rxn_base_id)
-                    else:  # Happens for 8 reactions, ToDo: Finding Best id is so rudimentary
-                        self.internal_rxns_temp.append(rxn_temp_ids[0])
+                    rxn_temp_ids = [_rxn_id for _rxn_id in rxn_translated_ids
+                                    if _rxn_id in self.all_template_reactions]
+                    if not rxn_temp_ids:
+                        warning_text = "The reaction with ID " + rxn_base_id + \
+                                    " does not have any corresponding reaction in the template"
+                        warnings.warn(warning_text)  # 66
+                    else:
+                        if rxn_base_id in rxn_temp_ids:  # 541
+                            self.internal_rxns_temp.append(rxn_base_id)
+                        else:  # 146, ToDo: Finding Best id is so rudimentary
+                            self.internal_rxns_temp.append(rxn_temp_ids[0])
             else:
                 warn_text = "The internal reaction " + rxn_base_id + " is not included in your translation file."  # 26
                 warnings.warn(warn_text)
