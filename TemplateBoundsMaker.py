@@ -6,6 +6,7 @@ This code, provides a class to place organism's bounds into the template.
 import pandas as pd
 import warnings
 import os
+import json
 
 
 def make_cell_to_cell_translation_dict(key_cell: str, value_cell: str) -> dict:
@@ -34,6 +35,7 @@ class TemplateBoundsMaker:
     def __init__(self,  # ToDo: Biomass!!!
                  lower_bounds_filepaths: list,
                  upper_bounds_filepaths: list,
+                 internal_rxns_filepath: str,
                  template_bounds_filepath: str,
                  input_reactions_nomenclature: str = None,
                  template_reactions_nomenclature: str = None,
@@ -41,6 +43,7 @@ class TemplateBoundsMaker:
         """
         :param lower_bounds_filepaths: List of paths for all .csv lower_bounds to be merged and placed on the template.
         :param upper_bounds_filepaths: List of paths for all .csv upper_bounds to be merged and placed on the template.
+        :param internal_rxns_filepath: A string denoting the filepath for internal_rxns_bounds.csv file.
         :param template_bounds_filepath: The path for the template_bounds.csv file
         :param reactions_translation_filepath: The path for the reactions_translation.csv file
         :param input_reactions_nomenclature: The column name in the translation_file
@@ -55,6 +58,10 @@ class TemplateBoundsMaker:
         self.upper_bounds_filepaths = upper_bounds_filepaths
         self.upper_bounds_df = None
         self.read_and_merge_upper_bounds()
+        # ###################################################
+        self.internal_rxns_filepath = internal_rxns_filepath
+        self.internal_rxns_ids = None
+        self.load_internal_reactions()
         # ######################################################
         self.template_bounds_filepath = template_bounds_filepath
         self.template_bounds = None
@@ -68,6 +75,7 @@ class TemplateBoundsMaker:
         self.translation_dict = None
         self.make_translation_dict()
         # ###############################
+        self.internal_rxns_temp = []
         self.template_placed_lower_bounds = None
         self.template_placed_upper_bounds = None
 
@@ -107,6 +115,14 @@ class TemplateBoundsMaker:
                 self.upper_bounds_df = pd.merge(self.upper_bounds_df, upper_bounds_file,
                                                 left_index=True, right_index=True)
 
+    def load_internal_reactions(self):
+        """
+        This method, loads the internal reactions bounds .csv file from self.internal_rxns_filepath
+        :return: -
+        """
+        internal_rxns_df = pd.read_csv(self.internal_rxns_filepath)
+        self.internal_rxns_ids = internal_rxns_df['ID'].tolist()
+
     def load_template_bounds(self):
         """
         This method, loads the template bounds .csv file from self.template_bounds_filepath
@@ -137,6 +153,28 @@ class TemplateBoundsMaker:
                 value_cell = row[self.template_reactions_nomenclature]
                 translation_dict = make_cell_to_cell_translation_dict(key_cell=key_cell, value_cell=value_cell)
                 self.translation_dict.update(translation_dict)
+                translation_dict2 = make_cell_to_cell_translation_dict(key_cell=value_cell, value_cell=value_cell)
+                self.translation_dict.update(translation_dict2)  # ToDo (important): Dirty addition
+
+    def translate_internal_reactions(self):
+        """
+        This method, finds corresponding ids for self.internal_rxns_ids in the template.
+        :return: Filling self.internal_rxns_temp.
+        """
+        for rxn_base_id in self.internal_rxns_ids:
+            if rxn_base_id in self.translation_dict.keys():
+                rxn_temp_ids = self.translation_dict[rxn_base_id]
+                if not rxn_temp_ids:
+                    warn_text = "Bad translation for " + rxn_base_id  # 161
+                    warnings.warn(warn_text)
+                else:
+                    if rxn_base_id in rxn_temp_ids:  # 745
+                        self.internal_rxns_temp.append(rxn_base_id)
+                    else:  # Happens for 8 reactions, ToDo: Finding Best id is so rudimentary
+                        self.internal_rxns_temp.append(rxn_temp_ids[0])
+            else:
+                warn_text = "The internal reaction " + rxn_base_id + " is not included in your translation file."  # 26
+                warnings.warn(warn_text)
 
     def make_template_lower_bounds(self):
         """
@@ -164,10 +202,10 @@ class TemplateBoundsMaker:
                 if not in_template:
                     warning_text = "The reaction with ID " + row['ID'] + \
                                    " does not have any corresponding reaction in the template"
-                    warnings.warn(warning_text)  # 16 warnings
+                    warnings.warn(warning_text)  # 16 warnings (148)
             else:
                 warn_text = "The reaction " + row['ID'] + " is not included in your translation file."
-                warnings.warn(warn_text)  # 451 warnings
+                warnings.warn(warn_text)  # 451 warnings (902)(251)
 
     def make_template_upper_bounds(self):
         """
@@ -198,7 +236,15 @@ class TemplateBoundsMaker:
                     warnings.warn(warning_text)  # 16 warnings
             else:
                 warn_text = "The reaction " + row['ID'] + " is not included in your translation file."
-                warnings.warn(warn_text)  # 451 warnings
+                warnings.warn(warn_text)  # 451 warnings (251)
+
+    def save_existing_reaction(self, path_to_save: str):
+        """
+        :param path_to_save: File path to save self.internal_rxns_temp
+        :return: -
+        """
+        with open(path_to_save, 'w') as file:
+            json.dump(self.internal_rxns_temp, file)
 
     def save_final_bounds(self, folder_to_save: str):
         """
@@ -221,16 +267,20 @@ ng_lb_filepaths = ["../Data/Palsson B.Subtilis Reconstruction/Util Bounds/ng_low
 ng_ub_filepaths = ["../Data/Palsson B.Subtilis Reconstruction/Util Bounds/ng_upper_bounds.csv",
                    "../Data/Palsson B.Subtilis Reconstruction/KO Bounds/ng_upper_bounds.csv"]
 
+micro_template_filepath = "../Data/Palsson B.Subtilis Reconstruction/Microbial Template/Microbial Universal Bounds.csv"
 g_obj = TemplateBoundsMaker(
     lower_bounds_filepaths=g_lb_filepaths,
     upper_bounds_filepaths=g_ub_filepaths,
-    template_bounds_filepath="../Data/Palsson B.Subtilis Reconstruction/Universal Bounds.csv",
-    input_reactions_nomenclature="BiGG id",
+    internal_rxns_filepath="../Data/Palsson B.Subtilis Reconstruction/Internal_Rxns_Bounds.csv",
+    template_bounds_filepath=micro_template_filepath,
+    input_reactions_nomenclature="KBase Abbr",
     template_reactions_nomenclature="BiGG id",
     reactions_translation_filepath="../Data/Palsson B.Subtilis Reconstruction/Reactions Translation.csv")
+g_obj.translate_internal_reactions()
 g_obj.make_template_lower_bounds()
 g_obj.make_template_upper_bounds()
-g_obj.save_final_bounds(folder_to_save="../Data/Palsson B.Subtilis Reconstruction/Template Placed Bounds/")
+g_obj.save_existing_reaction(path_to_save="../Data/Palsson B.Subtilis Reconstruction/existing_rxns.json")
+g_obj.save_final_bounds(folder_to_save="../Data/Palsson B.Subtilis Reconstruction/Micro-Template Placed Bounds/")
 
 # ng_obj = TemplateBoundsMaker(
 #     lower_bounds_filepaths=ng_lb_filepaths,
