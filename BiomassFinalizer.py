@@ -13,7 +13,7 @@ class BiomassFinalizer:
                  template_upper_bounds_filepath: str,
                  stoichiometric_data_filepath: str,
                  template_metabolites_filepath: str,
-                 internal_rxns_filepath: str,
+                 existing_reactions_filepath: str,
                  biomass_template_id: str = None,
                  biomass_composition_filepath: str = None,
                  biomass_growth_threshold: float = 1e-6):
@@ -22,7 +22,7 @@ class BiomassFinalizer:
         :param template_upper_bounds_filepath: The filepath for all_upper_bounds.csv
         :param stoichiometric_data_filepath: The filepath for stoichiometric_data.json
         :param template_metabolites_filepath: The filepath for template_metabolites.json
-        :param internal_rxns_filepath: A string denoting the filepath for internal_rxns_bounds.csv file.
+        :param existing_reactions_filepath: A string denoting the filepath for existing_rxns.json file.
         :param biomass_template_id: The ID for the biomass reaction, if present in the template
         :param biomass_composition_filepath: The filepath for biomass_composition.csv
         :param biomass_growth_threshold: The minimum biomass production rate for organism's growth
@@ -44,9 +44,9 @@ class BiomassFinalizer:
         self.all_template_metabolites = None
         self.load_template_metabolites()
         # ###################################################
-        self.internal_rxns_filepath = internal_rxns_filepath
-        self.internal_rxns_ids = None
-        self.load_internal_reactions()
+        self.existing_reactions_filepath = existing_reactions_filepath
+        self.existing_rxns_ids = None
+        self.load_existing_reactions()
         # #############################################
         self.biomass_template_id = biomass_template_id
         self.biomass_composition_filepath = biomass_composition_filepath
@@ -80,13 +80,13 @@ class BiomassFinalizer:
         with open(self.template_metabolites_filepath, 'r') as json_file:
             self.all_template_metabolites = json.load(json_file)
 
-    def load_internal_reactions(self):
+    def load_existing_reactions(self):
         """
-        This method, loads the internal reactions bounds .csv file from self.internal_rxns_filepath
+        This method, loads the existing reactions .json file from self.existing_reactions_filepath
         :return: -
         """
-        internal_rxns_df = pd.read_csv(self.internal_rxns_filepath)
-        self.internal_rxns_ids = internal_rxns_df['ID'].tolist()
+        with open(self.existing_reactions_filepath, 'r') as json_file:
+            self.existing_rxns_ids = json.load(json_file)
 
     def finalize_biomass_by_composition(self):
         # ToDo (Important one!)
@@ -148,13 +148,14 @@ class BiomassFinalizer:
         self.template_placed_upper_bounds = self.template_placed_upper_bounds.drop(columns=['ID'])
         reactions_index_map = {k: v for v, k in enumerate(self.all_template_reactions)}
         metabolites_index_map = {k: v for v, k in enumerate(self.all_template_metabolites)}
+        internal_rxns_indexes = [reactions_index_map[rxn_id] for rxn_id in self.existing_rxns_ids]
         self.make_sparse_stoichiometry_matix(reactions_index_map=reactions_index_map,
                                              metabolites_index_map=metabolites_index_map)
         # ##################################  Saving ####################################
         self.template_placed_lower_bounds.to_csv(folder_to_save + 'L.csv', index=False)
         self.template_placed_upper_bounds.to_csv(folder_to_save + 'U.csv', index=False)
         with open(folder_to_save + 'existing_reactions.json', 'w') as file:
-            json.dump(self.internal_rxns_ids, file)
+            json.dump(internal_rxns_indexes, file)
         with open(folder_to_save + 'reactions_index_map.json', 'w') as file:
             json.dump(reactions_index_map, file)
         with open(folder_to_save + 'metabolites_index_map.json', 'w') as file:
@@ -184,13 +185,13 @@ lbs_filepath = "../Data/Palsson B.Subtilis Reconstruction/Micro-Template Placed 
 ubs_filepath = "../Data/Palsson B.Subtilis Reconstruction/Micro-Template Placed Bounds/upper_bounds.csv"
 stoich_filepath = "../Data/Palsson B.Subtilis Reconstruction/Microbial Template/Microbial Stoichiometric Data.json"
 mets_filepath = "../Data/Palsson B.Subtilis Reconstruction/Microbial Template/Microbial Template Metabolites.json"
-internals_filepath = "../Data/Palsson B.Subtilis Reconstruction/Internal_Rxns_Bounds.csv"
+existing_rxns_filepath = "../Data/Palsson B.Subtilis Reconstruction/existing_rxns.json"
 obj = BiomassFinalizer(
     template_lower_bounds_filepath=lbs_filepath,
     template_upper_bounds_filepath=ubs_filepath,
     stoichiometric_data_filepath=stoich_filepath,
     template_metabolites_filepath=mets_filepath,
-    internal_rxns_filepath=internals_filepath,
+    existing_reactions_filepath=existing_rxns_filepath,
     biomass_template_id="Growth",  # "BIOMASS_Ec_iAF1260_core_59p81M",
     biomass_growth_threshold=1e-2)
 
