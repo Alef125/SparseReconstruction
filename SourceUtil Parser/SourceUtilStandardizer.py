@@ -38,6 +38,6 @@ class SourceUtilGrowthData:
             json.dump(util_dicts, f, ensure_ascii=False, indent=4)
 
 
-obj = SourceUtilGrowthData(csv_filepath="../Data/Palsson B.Subtilis Reconstruction/Growth_Biolog.csv",
+obj = SourceUtilGrowthData(csv_filepath="../../Data/Palsson B.Subtilis Reconstruction/Growth_Biolog.csv",
                            medium_name="minimal_media")
-obj.make_json_file(filepath_to_save="../Data/Palsson B.Subtilis Reconstruction/Growth_Biolog.json")
+obj.make_json_file(filepath_to_save="../../Data/Palsson B.Subtilis Reconstruction/Growth_Biolog.json")

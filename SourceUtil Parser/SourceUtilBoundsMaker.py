@@ -199,9 +199,9 @@ class SourceUtilBoundsMaker:
 
 
 media_filepath_dict1 = {'minimal_media': "../Data/Palsson B.Subtilis Reconstruction/Biolog_Medium_Bounds.csv"}
-obj = SourceUtilBoundsMaker(sources_util_filepath="../Data/Palsson B.Subtilis Reconstruction/Growth_Biolog.json",
+obj = SourceUtilBoundsMaker(sources_util_filepath="../../Data/Palsson B.Subtilis Reconstruction/Growth_Biolog.json",
                             media_filepath_dict=media_filepath_dict1,
-                            internal_rxns_filepath="../Data/Palsson B.Subtilis Reconstruction/Internal_Rxns_Bounds.csv")
+                            internal_rxns_filepath="../../Data/Palsson B.Subtilis Reconstruction/Internal_Rxns_Bounds.csv")
 obj.make_growth_bounds()
 obj.make_non_growth_bounds()
 obj.save_all_bounds(folder_to_save="../Data/Palsson B.Subtilis Reconstruction/Util Bounds/")
