@@ -203,9 +203,9 @@ class KnockOutBoundsMaker:
 
 
 media_filepath_dict_ = {'LB_Rich_Medium': "../Data/Palsson B.Subtilis Reconstruction/LB_Medium_Bounds.csv"}
-obj = KnockOutBoundsMaker(reactions_ko_filepath="../Data/Palsson B.Subtilis Reconstruction/Reactions KO Growth.json",
+obj = KnockOutBoundsMaker(reactions_ko_filepath="../../Data/Palsson B.Subtilis Reconstruction/Reactions KO Growth.json",
                           media_filepath_dict=media_filepath_dict_,
-                          internal_rxns_filepath="../Data/Palsson B.Subtilis Reconstruction/Internal_Rxns_Bounds.csv")
+                          internal_rxns_filepath="../../Data/Palsson B.Subtilis Reconstruction/Internal_Rxns_Bounds.csv")
 obj.make_growth_bounds()
 obj.make_non_growth_bounds()
 obj.save_all_bounds(folder_to_save="../Data/Palsson B.Subtilis Reconstruction/KO Bounds/")
