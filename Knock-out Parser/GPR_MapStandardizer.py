@@ -235,9 +235,9 @@ class GPRMapConverter:
 #                       input_reactions_nomenclature='R_Rxn',
 #                       output_reactions_nomenclature='Rxn',
 #                       translation_filepath="../Data/Palsson B.Subtilis Reconstruction/Reactions Translation File.csv")
-obj = GPRMapConverter(gene_assoc_data_filepath="../Data/Palsson B.Subtilis Reconstruction/B_Subtilis GPR rules.json",
+obj = GPRMapConverter(gene_assoc_data_filepath="../../Data/Palsson B.Subtilis Reconstruction/B_Subtilis GPR rules.json",
                       input_reactions_nomenclature='Base id',
                       output_reactions_nomenclature='BiGG id',
-                      translation_filepath="../Data/Palsson B.Subtilis Reconstruction/B_Subtilis Rxn Translation.csv")
-obj.make_genes_to_reactions_ko_dict(filepath_to_save="../Data/Palsson B.Subtilis Reconstruction/Organism GPR.json",
+                      translation_filepath="../../Data/Palsson B.Subtilis Reconstruction/B_Subtilis Rxn Translation.csv")
+obj.make_genes_to_reactions_ko_dict(filepath_to_save="../../Data/Palsson B.Subtilis Reconstruction/Organism GPR.json",
                                     gpr_type="Rule")

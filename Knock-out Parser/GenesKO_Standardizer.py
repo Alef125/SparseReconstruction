@@ -106,9 +106,9 @@ class GenesKOStandardizer:
 
 
 obj = GenesKOStandardizer(
-    genes_ko_growth_filepath="../Data/Palsson B.Subtilis Reconstruction/Genes KO Growth Data.csv",
+    genes_ko_growth_filepath="../../Data/Palsson B.Subtilis Reconstruction/Genes KO Growth Data.csv",
     medium_name="LB_Rich_Medium",
     input_genes_nomenclature="name",
     output_genes_nomenclature="Base id",
-    translation_filepath="../Data/Palsson B.Subtilis Reconstruction/B_Subtilis Gene Translation.csv")
-obj.make_genes_ko_growth_dict(filepath_to_save="../Data/Palsson B.Subtilis Reconstruction/Genes KO Growth.json")
+    translation_filepath="../../Data/Palsson B.Subtilis Reconstruction/B_Subtilis Gene Translation.csv")
+obj.make_genes_ko_growth_dict(filepath_to_save="../../Data/Palsson B.Subtilis Reconstruction/Genes KO Growth.json")

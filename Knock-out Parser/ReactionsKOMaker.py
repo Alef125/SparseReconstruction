@@ -50,6 +50,6 @@ class ReactionsKOMaker:
             json.dump(reactions_ko_dicts, f, ensure_ascii=False, indent=4)
 
 
-obj = ReactionsKOMaker(organism_gpr_filepath="../Data/Palsson B.Subtilis Reconstruction/Organism GPR.json",
-                       genes_ko_growth_filepath="../Data/Palsson B.Subtilis Reconstruction/Genes KO Growth.json")
-obj.make_reactions_ko_growth(filepath_to_save="../Data/Palsson B.Subtilis Reconstruction/Reactions KO Growth.json")
+obj = ReactionsKOMaker(organism_gpr_filepath="../../Data/Palsson B.Subtilis Reconstruction/Organism GPR.json",
+                       genes_ko_growth_filepath="../../Data/Palsson B.Subtilis Reconstruction/Genes KO Growth.json")
+obj.make_reactions_ko_growth(filepath_to_save="../../Data/Palsson B.Subtilis Reconstruction/Reactions KO Growth.json")
