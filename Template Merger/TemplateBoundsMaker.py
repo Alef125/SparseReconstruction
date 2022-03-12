@@ -31,6 +31,38 @@ def make_cell_to_cell_translation_dict(key_cell: str, value_cell: str) -> dict:
     return translation_dict
 
 
+def make_general_translation_dict(reactions_translation_filepath: str,
+                                  input_reactions_nomenclature: str,
+                                  template_reactions_nomenclature: str) -> dict:
+    """
+    This method, reads reactions_translation_file.csv from reactions_translation_filepath,
+        then makes the general_translation_dict with keys as reactions names in input_reactions_nomenclature
+        and values as reactions names in template_reactions_nomenclature
+    :param reactions_translation_filepath: Filepath for the reactions_translation_file.csv
+    :param input_reactions_nomenclature: Source IDs for translation
+    :param template_reactions_nomenclature: Destination IDs for translation
+    :return: general_translation_dict
+    """
+    translation_file = pd.read_csv(reactions_translation_filepath)
+    if input_reactions_nomenclature:
+        if input_reactions_nomenclature not in translation_file.columns:
+            print("input_reactions_nomenclature does not exist in translation_file")  # ToDo: to Exception
+            raise Exception
+    if template_reactions_nomenclature:
+        if template_reactions_nomenclature not in translation_file.columns:
+            print("template_reactions_nomenclature does not exist in translation_file")
+            raise Exception
+    general_translation_dict = {}
+    for index, row in translation_file.iterrows():
+        key_cell = row[input_reactions_nomenclature]
+        value_cell = row[template_reactions_nomenclature]
+        translation_dict = make_cell_to_cell_translation_dict(key_cell=key_cell, value_cell=value_cell)
+        general_translation_dict.update(translation_dict)
+        translation_dict2 = make_cell_to_cell_translation_dict(key_cell=value_cell, value_cell=value_cell)
+        general_translation_dict.update(translation_dict2)  # ToDo (important): Dirty addition
+    return general_translation_dict
+
+
 class TemplateBoundsMaker:
     def __init__(self,  # ToDo: Biomass!!!
                  lower_bounds_filepaths: list,
@@ -72,7 +104,7 @@ class TemplateBoundsMaker:
         self.template_reactions_nomenclature = template_reactions_nomenclature
         # #############################
         self.reactions_translation_filepath = reactions_translation_filepath
-        self.translation_dict = None
+        self.translation_dict = {}
         self.make_translation_dict()
         # ###############################
         self.internal_rxns_temp = []
@@ -133,28 +165,49 @@ class TemplateBoundsMaker:
 
     def make_translation_dict(self):
         """
-        This method, reads reactions_translation_file.csv from self.reactions_translation_filepath,
-            then makes the self.translation_dict dictionary with keys as reactions names in
-            self.input_reactions_nomenclature and values as reactions names in self.template_reactions_nomenclature
+        This method, finds corresponding reactions of organism's network in the template reactions.
+        :return: Filling self.translation_dict
         """
+        # ############ Building general_translation_dict ############
+        general_translation_dict = {}
         if self.reactions_translation_filepath:
-            self.translation_dict = {}
-            translation_file = pd.read_csv(self.reactions_translation_filepath)
-            if self.input_reactions_nomenclature:
-                if self.input_reactions_nomenclature not in translation_file.columns:
-                    print("input_reactions_nomenclature does not exist in translation_file")  # ToDo: to Exception
-                    raise Exception
-            if self.template_reactions_nomenclature:
-                if self.template_reactions_nomenclature not in translation_file.columns:
-                    print("template_reactions_nomenclature does not exist in translation_file")
-                    raise Exception
-            for index, row in translation_file.iterrows():
-                key_cell = row[self.input_reactions_nomenclature]
-                value_cell = row[self.template_reactions_nomenclature]
-                translation_dict = make_cell_to_cell_translation_dict(key_cell=key_cell, value_cell=value_cell)
-                self.translation_dict.update(translation_dict)
-                translation_dict2 = make_cell_to_cell_translation_dict(key_cell=value_cell, value_cell=value_cell)
-                self.translation_dict.update(translation_dict2)  # ToDo (important): Dirty addition
+            general_translation_dict = make_general_translation_dict(
+                reactions_translation_filepath=self.reactions_translation_filepath,
+                input_reactions_nomenclature=self.input_reactions_nomenclature,
+                template_reactions_nomenclature=self.template_reactions_nomenclature
+            )
+        # ######## Filling self.translation_dict by self.total_reactions_list one by one #########
+        for base_reaction_id in self.total_reactions_list:
+            if base_reaction_id in self.all_template_reactions:
+                # No need for translation
+                self.translation_dict[base_reaction_id] = [base_reaction_id]
+            else:
+                # Translation needed
+                if base_reaction_id in general_translation_dict.keys():
+                    # Reaction exists in the general_translation_dict
+                    translated_ids = general_translation_dict[base_reaction_id]
+                    template_ids = [_rxn_id for _rxn_id in translated_ids
+                                    if _rxn_id in self.all_template_reactions]
+                    if template_ids:
+                        # Intersection of translated_ids and self.all_template_reactions is not empty
+                        self.translation_dict[base_reaction_id] = template_ids
+                    else:
+                        # The intersection of translated_ids and self.all_template_reactions is empty (# = 172 of 1165)
+                        warning_text = "The reaction with ID " + base_reaction_id + \
+                                       " does not have any corresponding reaction in the template"
+                        warnings.warn(warning_text)
+                        self.translation_dict[base_reaction_id] = []
+                else:
+                    # Reaction doesn't exist in the general_translation_dict (# = 43 of 1165)
+                    warn_text = "The reaction " + base_reaction_id + " is not included in your translation file."
+                    warnings.warn(warn_text)
+                    self.translation_dict[base_reaction_id] = []
+                """
+                Note: Exchange reactions map have been manually added to the Reactions Translation.csv file 
+                      from row 43776 to 43973. 
+                      For more accurate changes, you should modify this end rows or modify the 
+                      make_general_translation_dict method to accept an additional exchange_mapping file.
+                """
 
     def translate_internal_reactions(self):
         """
@@ -162,25 +215,13 @@ class TemplateBoundsMaker:
         :return: Filling self.internal_rxns_temp.
         """
         for rxn_base_id in self.internal_rxns_ids:
-            if rxn_base_id in self.translation_dict.keys():
-                rxn_translated_ids = self.translation_dict[rxn_base_id]
-                if not rxn_translated_ids:
-                    warn_text = "Empty translation for " + rxn_base_id  # 161
-                    warnings.warn(warn_text)
-                else:
-                    rxn_temp_ids = [_rxn_id for _rxn_id in rxn_translated_ids
-                                    if _rxn_id in self.all_template_reactions]
-                    if not rxn_temp_ids:
-                        warning_text = "The reaction with ID " + rxn_base_id + \
-                                    " does not have any corresponding reaction in the template"
-                        warnings.warn(warning_text)  # 66
-                    else:
-                        if rxn_base_id in rxn_temp_ids:  # 541
-                            self.internal_rxns_temp.append(rxn_base_id)
-                        else:  # 146, ToDo: Finding Best id is so rudimentary
-                            self.internal_rxns_temp.append(rxn_temp_ids[0])
+            if rxn_base_id in self.total_reactions_list:
+                rxn_template_ids = self.translation_dict[rxn_base_id]
+                if rxn_template_ids:
+                    self.internal_rxns_temp.append(rxn_template_ids[0])
+                    # Assuming the first element to be proper enough
             else:
-                warn_text = "The internal reaction " + rxn_base_id + " is not included in your translation file."  # 26
+                warn_text = "The internal reaction " + rxn_base_id + " is not a part of your organism"
                 warnings.warn(warn_text)
 
     def make_template_lower_bounds(self):
@@ -196,23 +237,12 @@ class TemplateBoundsMaker:
             self.template_placed_lower_bounds[data_column] = self.template_bounds['Lower Bound']
         # ########### Finding corresponding rows and modify them in template rows ##############
         for index, row in self.lower_bounds_df.iterrows():
-            if row['ID'] in self.translation_dict.keys():
-                template_ids = self.translation_dict[row['ID']]
-                in_template = False
-                for template_id in template_ids:
-                    if template_id in self.all_template_reactions:
-                        self.template_placed_lower_bounds.loc[
-                            self.template_placed_lower_bounds['ID'] == template_id,
-                            all_data_columns
-                        ] = row[all_data_columns].tolist()
-                        in_template = True
-                if not in_template:
-                    warning_text = "The reaction with ID " + row['ID'] + \
-                                   " does not have any corresponding reaction in the template"
-                    warnings.warn(warning_text)  # 16 warnings (148)
-            else:
-                warn_text = "The reaction " + row['ID'] + " is not included in your translation file."
-                warnings.warn(warn_text)  # 451 warnings (902)(251)
+            template_ids = self.translation_dict[row['ID']]
+            for template_id in template_ids:
+                self.template_placed_lower_bounds.loc[
+                    self.template_placed_lower_bounds['ID'] == template_id,
+                    all_data_columns
+                ] = row[all_data_columns].tolist()
 
     def make_template_upper_bounds(self):
         """
@@ -227,23 +257,13 @@ class TemplateBoundsMaker:
             self.template_placed_upper_bounds[data_column] = self.template_bounds['Upper Bound']
         # ########### Finding corresponding rows and modify them in template rows ##############
         for index, row in self.upper_bounds_df.iterrows():
-            if row['ID'] in self.translation_dict.keys():
-                template_ids = self.translation_dict[row['ID']]
-                in_template = False
-                for template_id in template_ids:
-                    if template_id in self.all_template_reactions:
-                        self.template_placed_upper_bounds.loc[
-                            self.template_placed_upper_bounds['ID'] == template_id,
-                            all_data_columns
-                        ] = row[all_data_columns].tolist()
-                        in_template = True
-                if not in_template:
-                    warning_text = "The reaction with ID " + row['ID'] + \
-                                   " does not have any corresponding reaction in the template"
-                    warnings.warn(warning_text)  # 16 warnings
-            else:
-                warn_text = "The reaction " + row['ID'] + " is not included in your translation file."
-                warnings.warn(warn_text)  # 451 warnings (251)
+            template_ids = self.translation_dict[row['ID']]
+            for template_id in template_ids:
+                if template_id in self.all_template_reactions:
+                    self.template_placed_upper_bounds.loc[
+                        self.template_placed_upper_bounds['ID'] == template_id,
+                        all_data_columns
+                    ] = row[all_data_columns].tolist()
 
     def save_existing_reaction(self, path_to_save: str):
         """
@@ -274,15 +294,15 @@ ng_lb_filepaths = ["../Data/Palsson B.Subtilis Reconstruction/Util Bounds/ng_low
 ng_ub_filepaths = ["../Data/Palsson B.Subtilis Reconstruction/Util Bounds/ng_upper_bounds.csv",
                    "../Data/Palsson B.Subtilis Reconstruction/KO Bounds/ng_upper_bounds.csv"]
 
-micro_template_filepath = "../../Data/Palsson B.Subtilis Reconstruction/Microbial Template/Microbial Universal Bounds.csv"
+micro_template_filepath = "../Data/Palsson B.Subtilis Reconstruction/Microbial Template/Microbial Universal Bounds.csv"
 g_obj = TemplateBoundsMaker(
     lower_bounds_filepaths=g_lb_filepaths,
     upper_bounds_filepaths=g_ub_filepaths,
-    internal_rxns_filepath="../../Data/Palsson B.Subtilis Reconstruction/Internal_Rxns_Bounds.csv",
+    internal_rxns_filepath="../Data/Palsson B.Subtilis Reconstruction/Internal_Rxns_Bounds.csv",
     template_bounds_filepath=micro_template_filepath,
     input_reactions_nomenclature="KBase Abbr",
     template_reactions_nomenclature="BiGG id",
-    reactions_translation_filepath="../../Data/Palsson B.Subtilis Reconstruction/Reactions Translation.csv")
+    reactions_translation_filepath="../Data/Palsson B.Subtilis Reconstruction/Reactions Translation.csv")
 g_obj.translate_internal_reactions()
 g_obj.make_template_lower_bounds()
 g_obj.make_template_upper_bounds()
