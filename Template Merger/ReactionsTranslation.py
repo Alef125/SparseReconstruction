@@ -46,18 +46,36 @@ def make_cell_to_cell_translation_dict(key_cell: str, value_cell: str) -> dict:
                        like "[rxn4; rxn5; rxn6]"
     :return: translation_dict: Dict of all possible translations, like:
                         {rxn1: [rxn4, rxn5, rxn6], rxn2: [rxn4, rxn5, rxn6], rxn3: [rxn4, rxn5, rxn6]}
+    * Update: Also key ids are added to the values of the translation_dict, i.e.:
+              {rxn1: [rxn1, rxn2, rxn3, rxn4, rxn5, rxn6], rxn2: [rxn1, rxn2, rxn3, rxn4, rxn5, rxn6], ...}
     """
     translation_dict = {}
     if pd.isna(key_cell):
         return {}
     key_reactions = get_cell_str_to_list(cell_str=key_cell)
     if pd.isna(value_cell):
-        value_reactions = []
+        value_reactions = key_reactions  # was [] before * update
     else:
         value_reactions = get_cell_str_to_list(cell_str=value_cell)
     for key_reaction in key_reactions:
-        translation_dict[key_reaction] = value_reactions
+        # was value_reactions before * update
+        translation_dict[key_reaction] = list(set(key_reactions + value_reactions))
     return translation_dict
+
+
+def update_dict(base_dict: dict, supplementary_dict: dict) -> dict:
+    """
+    This method, is a more desired version of base_dict.update(supplementary_dict)
+    :param base_dict: The general translation dictionary
+    :param supplementary_dict: The dictionary to append to the general dict
+    :return: Updated base_dict
+    """
+    for key, value_list in supplementary_dict.items():
+        if key in base_dict.keys():
+            base_dict[key] = list(set(base_dict[key] + value_list))
+        else:
+            base_dict[key] = value_list
+    return base_dict
 
 
 def make_general_translation_dict(reactions_translation_filepath: str,
@@ -84,9 +102,9 @@ def make_general_translation_dict(reactions_translation_filepath: str,
         key_cell = row[input_reactions_nomenclature]
         value_cell = row[template_reactions_nomenclature]
         translation_dict = make_cell_to_cell_translation_dict(key_cell=key_cell, value_cell=value_cell)
-        general_translation_dict.update(translation_dict)
-        translation_dict2 = make_cell_to_cell_translation_dict(key_cell=value_cell, value_cell=value_cell)
-        general_translation_dict.update(translation_dict2)  # ToDo (important): Dirty addition
+        update_dict(base_dict=general_translation_dict, supplementary_dict=translation_dict)
+        reversed_translation_dict = make_cell_to_cell_translation_dict(key_cell=value_cell, value_cell=key_cell)
+        update_dict(base_dict=general_translation_dict, supplementary_dict=reversed_translation_dict)
     return general_translation_dict
 
 
@@ -137,9 +155,23 @@ class Translator:
                 self.translation_dict[base_reaction_id] = [base_reaction_id]
             else:
                 # Translation needed
+                # ################## Adding some key variations ###################
+                rxn_id_exists = False
+                translated_ids = []
+                # 'X(Y)' --> 'X_Y'  and 'X-Y' --> 'X_Y'
+                variant_base_id = base_reaction_id.replace('-', '_').replace('(', '_').replace(')', '')
                 if base_reaction_id in general_translation_dict.keys():
-                    # Reaction exists in the general_translation_dict
                     translated_ids = general_translation_dict[base_reaction_id]
+                    rxn_id_exists = True
+                elif variant_base_id in general_translation_dict.keys():
+                    translated_ids = general_translation_dict[variant_base_id]
+                    rxn_id_exists = True
+                elif variant_base_id + '_' in general_translation_dict.keys():
+                    translated_ids = general_translation_dict[variant_base_id + '_']
+                    rxn_id_exists = True
+                # ################################################################
+                if rxn_id_exists:
+                    # Reaction exists in the general_translation_dict
                     template_ids = [_rxn_id for _rxn_id in translated_ids
                                     if _rxn_id in self.list_of_template_reactions]
                     if template_ids:
