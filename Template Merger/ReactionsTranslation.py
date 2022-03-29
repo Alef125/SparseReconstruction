@@ -23,7 +23,7 @@ def get_cell_str_to_list(cell_str: str):
     if cell_str[0] == '[' and cell_str[-1] == ']':
         cell_str = cell_str[1:-1]
     if ',' in cell_str:
-        delimiter = "; "
+        delimiter = ", "
     else:
         delimiter = "; "
     ids_raw_list = cell_str.split(delimiter)
