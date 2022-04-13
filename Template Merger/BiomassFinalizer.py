@@ -181,10 +181,10 @@ class BiomassFinalizer:
         self.save_final_data(folder_to_save=folder_to_save)
 
 
-lbs_filepath = "../../Data/Palsson B.Subtilis Reconstruction/Micro-Template Placed Bounds/lower_bounds.csv"
-ubs_filepath = "../../Data/Palsson B.Subtilis Reconstruction/Micro-Template Placed Bounds/upper_bounds.csv"
-stoich_filepath = "../../Data/Palsson B.Subtilis Reconstruction/Microbial Template/Microbial Stoichiometric Data.json"
-mets_filepath = "../../Data/Palsson B.Subtilis Reconstruction/Microbial Template/Microbial Template Metabolites.json"
+lbs_filepath = "../Data/Palsson B.Subtilis Reconstruction/Micro-Template Placed Bounds/lower_bounds.csv"
+ubs_filepath = "../Data/Palsson B.Subtilis Reconstruction/Micro-Template Placed Bounds/upper_bounds.csv"
+stoich_filepath = "../Data/Palsson B.Subtilis Reconstruction/Microbial Template/Microbial Stoichiometric Data.json"
+mets_filepath = "../Data/Palsson B.Subtilis Reconstruction/Microbial Template/Microbial Template Metabolites.json"
 existing_rxns_filepath = "../Data/Palsson B.Subtilis Reconstruction/existing_rxns.json"
 obj = BiomassFinalizer(
     template_lower_bounds_filepath=lbs_filepath,
@@ -193,6 +193,6 @@ obj = BiomassFinalizer(
     template_metabolites_filepath=mets_filepath,
     existing_reactions_filepath=existing_rxns_filepath,
     biomass_template_id="Growth",  # "BIOMASS_Ec_iAF1260_core_59p81M",
-    biomass_growth_threshold=1e-2)
+    biomass_growth_threshold=1e-1)
 
 obj.finalize_and_save_data(folder_to_save="../Data/Palsson B.Subtilis Reconstruction/Microbial Final Data/")

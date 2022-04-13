@@ -7,7 +7,7 @@ from SourceUtilBoundsMaker import SourceUtilBoundsMaker
 from TemplateBoundsMaker import TemplateBoundsMaker
 
 
-class BioDataOrganizer:  # ToDo: 1.descriptions  2.run from middle (we have mid data)
+class BioDataOrganizer:  # ToDo: 1.descriptions  2.run from middle (if we have mid data)
     def __init__(self,
                  media_filepaths_dict: dict,
                  internal_rxns_filepath: str,
@@ -20,16 +20,24 @@ class BioDataOrganizer:  # ToDo: 1.descriptions  2.run from middle (we have mid 
                            genes_ko_growth_filepath: str,
                            medium_name: str,
                            gene_assoc_data_filepath: str,
-                           input_reactions_nomenclature: str,
-                           output_reactions_nomenclature: str,
-                           translation_filepath: str,
+                           genes_translation_filepath: str,
+                           reactions_translation_filepath: str,
+                           input_genes_nomenclature: str = None,
+                           output_genes_nomenclature: str = None,
+                           input_reactions_nomenclature: str = None,
+                           output_reactions_nomenclature: str = None,
+                           gpr_type: str = None,
                            filepath_to_save_ko_genes_dict: str = "./Genes KO Growth.json",
                            filepath_to_save_organism_gpr: str = "./Organism GPR.json",
                            filepath_to_save_ko_reactions_dict: str = "./Reactions KO Growth.json"):
         # ################### Convert KO data into the standard .json ####################
         genes_ko_standardizer = GenesKOStandardizer(
             genes_ko_growth_filepath=genes_ko_growth_filepath,
-            medium_name=medium_name)
+            medium_name=medium_name,
+            input_genes_nomenclature=input_genes_nomenclature,
+            output_genes_nomenclature=output_genes_nomenclature,
+            translation_filepath=genes_translation_filepath
+        )
         genes_ko_standardizer.make_genes_ko_growth_dict(
             filepath_to_save=filepath_to_save_ko_genes_dict)
         # ################# Convert GPR association data into the standard .json ##################
@@ -37,9 +45,10 @@ class BioDataOrganizer:  # ToDo: 1.descriptions  2.run from middle (we have mid 
             gene_assoc_data_filepath=gene_assoc_data_filepath,
             input_reactions_nomenclature=input_reactions_nomenclature,
             output_reactions_nomenclature=output_reactions_nomenclature,
-            translation_filepath=translation_filepath)
+            translation_filepath=reactions_translation_filepath)
         gpr_map_converter.make_genes_to_reactions_ko_dict(
-            filepath_to_save=filepath_to_save_organism_gpr)
+            filepath_to_save=filepath_to_save_organism_gpr,
+            gpr_type=gpr_type)
         # ##################### Convert genes KO data into reactions KO data ######################
         reaction_ko_maker = ReactionsKOMaker(
             organism_gpr_filepath=filepath_to_save_organism_gpr,
@@ -90,10 +99,14 @@ bio_data_organizer.organize_ko_bounds(
     genes_ko_growth_filepath="../Data/Palsson B.Subtilis Reconstruction/Genes KO Growth Data.csv",
     medium_name="LB_Rich_Medium",
     filepath_to_save_ko_genes_dict="../Data/Palsson B.Subtilis Reconstruction/Genes KO Growth.json",
-    gene_assoc_data_filepath="../Data/Palsson B.Subtilis Reconstruction/Genes Associations.json",
-    input_reactions_nomenclature='R_Rxn',
-    output_reactions_nomenclature='Rxn',
-    translation_filepath="../Data/Palsson B.Subtilis Reconstruction/Reactions Translation File.csv",
+    gene_assoc_data_filepath="../Data/Palsson B.Subtilis Reconstruction/B_Subtilis GPR rules.json",
+    input_genes_nomenclature="name",
+    output_genes_nomenclature="Base id",
+    input_reactions_nomenclature='Base id',
+    output_reactions_nomenclature='BiGG id',
+    gpr_type="Rule",
+    genes_translation_filepath="../Data/Palsson B.Subtilis Reconstruction/B_Subtilis Gene Translation.csv",
+    reactions_translation_filepath="../Data/Palsson B.Subtilis Reconstruction/B_Subtilis Rxn Translation.csv",
     filepath_to_save_organism_gpr="../Data/Palsson B.Subtilis Reconstruction/Organism GPR.json",
     filepath_to_save_ko_reactions_dict="../Data/Palsson B.Subtilis Reconstruction/Reactions KO Growth.json")
 

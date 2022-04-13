@@ -199,9 +199,8 @@ ng_ub_filepaths = ["../Data/Palsson B.Subtilis Reconstruction/Util Bounds/ng_upp
                    "../Data/Palsson B.Subtilis Reconstruction/KO Bounds/ng_upper_bounds.csv"]
 
 micro_template_filepath = "../Data/Palsson B.Subtilis Reconstruction/Microbial Template/Microbial Universal Bounds.csv"
+# reactions_translation_filepath="../../Data/Palsson B.Subtilis Reconstruction/KBase_Translation.csv",
 # reactions_translation_filepath="../../Data/Palsson B.Subtilis Reconstruction/BiGG_Univ_Translation.csv",
-# input_reactions_nomenclature="Base id",
-# template_reactions_nomenclature="BiGG ids"
 g_obj = TemplateBoundsMaker(
     lower_bounds_filepaths=g_lb_filepaths,
     upper_bounds_filepaths=g_ub_filepaths,
@@ -209,7 +208,7 @@ g_obj = TemplateBoundsMaker(
     template_bounds_filepath=micro_template_filepath,
     input_reactions_nomenclature="Base id",
     template_reactions_nomenclature="BiGG ids",
-    reactions_translation_filepath="../Data/Palsson B.Subtilis Reconstruction/KBase_Translation.csv")
+    reactions_translation_filepath="../Data/Palsson B.Subtilis Reconstruction/BiGG_Univ_Translation.csv")
 g_obj.translate_internal_reactions()
 g_obj.make_template_lower_bounds()
 g_obj.make_template_upper_bounds()
